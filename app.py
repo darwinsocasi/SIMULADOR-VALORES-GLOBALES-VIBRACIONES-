@@ -1,3 +1,5 @@
+import glob
+import os
 import numpy as np
 import pandas as pd
 import streamlit as st
@@ -28,16 +30,29 @@ modo = st.sidebar.selectbox(
     ],
 )
 
-# Cargar Base Maestra por defecto
-try:
-  df_master = pd.read_excel("master_vibrations_db.xlsx")
-except Exception as e:
-  df_master = None
+# Cargar Base Maestra de forma robusta
+df_master = None
+archivos_excel = glob.glob("*.xlsx")
+
+excel_target = None
+for f in archivos_excel:
+  if "master_vibrations_db" in f.lower():
+    excel_target = f
+    break
+
+if excel_target is None and len(archivos_excel) > 0:
+  excel_target = archivos_excel[0]
+
+if excel_target:
+  try:
+    df_master = pd.read_excel(excel_target)
+  except Exception as e:
+    st.sidebar.error(f"Error al leer {excel_target}: {e}")
 
 if modo == "Base de Datos Maestra (Histórico de Planta)":
   st.subheader("📊 Historial y Evolución Trimestral (Últimos 2.5 Años)")
 
-  if df_master is not None:
+  if df_master is not None and not df_master.empty:
     maquina_sel = st.selectbox(
         "Seleccione la Máquina:", df_master["ID_Maquina"].unique()
     )
@@ -47,7 +62,6 @@ if modo == "Base de Datos Maestra (Histórico de Planta)":
     punto_sel = st.selectbox("Seleccione el Punto de Medición:", puntos_disponibles)
     eje_sel = st.radio("Seleccione el Eje de Medición:", ["X", "Y", "Z"], horizontal=True)
 
-    # Filtrar datos históricos para la combinación seleccionada
     df_filtrado = df_master[
         (df_master["ID_Maquina"] == maquina_sel)
         & (df_master["Punto_Medicion"] == punto_sel)
@@ -87,9 +101,9 @@ if modo == "Base de Datos Maestra (Histórico de Planta)":
       st.subheader("🔍 Diagnóstico Experto Automatizado (Última Lectura)")
       ultima_fila = df_filtrado.iloc[-1]
 
-      vel = ultima_fila["Velocidad_mm_s"]
-      env = ultima_fila["Envolvente_gE"]
-      desp = ultima_fila["Desplazamiento_um"]
+      vel = ultima_fila.get("Velocidad_mm_s", 0)
+      env = ultima_fila.get("Envolvente_gE", 0)
+      desp = ultima_fila.get("Desplazamiento_um", 0)
 
       diagnosticos = []
 
@@ -139,7 +153,8 @@ if modo == "Base de Datos Maestra (Histórico de Planta)":
       st.warning("No hay registros para la selección realizada.")
   else:
     st.error(
-        "No se encontró el archivo 'master_vibrations_db.xlsx' en el repositorio."
+        "No se encontró ningún archivo Excel (.xlsx) en el repositorio."
+        " Asegúrate de haber subido 'master_vibrations_db.xlsx'."
     )
 
 else:
@@ -192,7 +207,7 @@ else:
       st.markdown(
           f"**Punto:** {p} | **Eje:** {e} — **Estado:** `{estado}`"
       )
-      st.caption(f"Diagnóstico experta: {motivo}")
+      st.caption(f"Diagnóstico experto: {motivo}")
   else:
     st.info(
         "Esperando archivo Excel... Asegúrate de mantener la misma estructura"

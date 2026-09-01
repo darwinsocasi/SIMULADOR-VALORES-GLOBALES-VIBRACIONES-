@@ -9,7 +9,8 @@ st.set_page_config(
 )
 
 st.title(
-    "⚙️ Sistema Experto de Diagnóstico Predictivo y Trazabilidad de Vibraciones"
+    "⚙️ Sistema Experto de Diagnóstico Predictivo y Trazabilidad de"
+    " Vibraciones"
 )
 st.markdown(
     """
@@ -20,7 +21,6 @@ diagnosticar fallas típicas mediante reglas expertas de ingeniería de confiabi
 )
 
 
-# --- GENERADOR DE DATOS HISTÓRICOS INTEGRADO (A prueba de fallos) ---
 @st.cache_data
 def cargar_base_maestra():
   fechas = [
@@ -93,7 +93,6 @@ def cargar_base_maestra():
 
 df_master = cargar_base_maestra()
 
-# Menú lateral para elegir el modo de trabajo
 modo = st.sidebar.selectbox(
     "Selecciona el Modo de Operación:",
     [
@@ -111,13 +110,18 @@ if modo == "Base de Datos Maestra (Histórico de Planta)":
   puntos_disponibles = df_master[df_master["ID_Maquina"] == maquina_sel][
       "Punto_Medicion"
   ].unique()
-  punto_sel = st.selectbox("Seleccione el Punto de Medición:", puntos_disponibles)
-  eje_sel = st.radio("Seleccione el Eje de Medición:", ["X", "Y", "Z"], horizontal=True)
+  punto_sel = st.selectbox(
+      "Seleccione el Punto de Medición:", puntos_disponibles
+  )
+  eje_sel = st.radio(
+      "Seleccione el Eje de Medición:", ["X", "Y", "Z"], horizontal=True
+  )
 
+  # Filtro corregido con paréntesis correctos
   df_filtrado = df_master[
       (df_master["ID_Maquina"] == maquina_sel)
       & (df_master["Punto_Medicion"] == punto_sel)
-      & (df_master["Eje"] == eje_sel]
+      & (df_master["Eje"] == eje_sel)
   ].sort_values("Fecha")
 
   if not df_filtrado.empty:
@@ -142,7 +146,6 @@ if modo == "Base de Datos Maestra (Histórico de Planta)":
         use_container_width=True,
     )
 
-    # --- MOTOR DE DIAGNÓSTICO EXPERTO (Última Lectura) ---
     st.subheader("🔍 Diagnóstico Experto Automatizado (Última Lectura)")
     ultima_fila = df_filtrado.iloc[-1]
 
@@ -192,7 +195,6 @@ if modo == "Base de Datos Maestra (Histórico de Planta)":
 
   else:
     st.warning("No hay registros para la selección realizada.")
-
 else:
   st.subheader("📂 Subir Nuevo Archivo de Lecturas (Trimestral)")
   st.markdown(
